@@ -98,7 +98,7 @@ void setup() {
   // --- Init TMAG (0x35) ---
   if (tmag.begin(0x35, Wire)) {
     tmagReady = true;
-    tmag.setConvAvg(TMAG5273_X32_CONV_AVG);
+    tmag.setConvAvg(TMAG5273_X32_CONVERSION); 
     
     float bx = 0;
     for (int i = 0; i < BASELINE_SAMPLES; i++) {
