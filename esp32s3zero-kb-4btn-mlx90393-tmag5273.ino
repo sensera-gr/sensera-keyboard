@@ -27,61 +27,53 @@ WiFiClient     telnetClient;
 #define SLIDER_COOLDOWN_MS 150 
 
 // =============================================================
-//  MLX90393 CROSS SLIDER (Right Side)
+//  TMAG5273 SLIDER (Left Side: A/B)
+// =============================================================
+TMAG5273 tmag;
+bool  tmagReady = false;
+float tmagBaselineX = 0; 
+
+// CALIBRATION THRESHOLDS (Milliteslas - mT)
+const float TMAG_UP_THRESHOLD   = 2.0f;  
+const float TMAG_DOWN_THRESHOLD = -2.0f; 
+const float TMAG_DEADZONE       = 0.5f;  
+
+int           tmagSliderState = 0;
+bool          key_a_held      = false;
+bool          key_b_held      = false;
+float         lastTmagDebugDx = 0;
+unsigned long lastTmagTimeMs  = 0;
+#define TMAG_INTERVAL_MS 20
+unsigned long lastTmagReadMs  = 0;
+
+// =============================================================
+//  MLX90393 SLIDER (Right Side: C/D)
 // =============================================================
 Adafruit_MLX90393 mlx = Adafruit_MLX90393();
 bool  mlxReady  = false;
 float mlxBaselineX = 0, mlxBaselineY = 0, mlxBaselineZ = 0;
 
-// Thresholds for X (Up/Down) and Y (Left/Right)
-const float MLX_X_POS_THRES = 450.0f;  // UP
-const float MLX_X_NEG_THRES = -450.0f; // DOWN
-const float MLX_Y_POS_THRES = 450.0f;  // RIGHT
-const float MLX_Y_NEG_THRES = -450.0f; // LEFT
-const float MLX_DEADZONE    = 150.0f;  
+// CALIBRATION THRESHOLDS (Raw Bits)
+const float MLX_UP_THRESHOLD   = 450.0f;  
+const float MLX_DOWN_THRESHOLD = -450.0f; 
+const float MLX_DEADZONE       = 150.0f;  
 
-int           mlxStateX      = 0; 
-int           mlxStateY      = 0; 
-float         lastMlxDebugX  = 0; 
-float         lastMlxDebugY  = 0; 
-unsigned long lastMlxTimeX   = 0;
-unsigned long lastMlxTimeY   = 0;
+int           mlxSliderState   = 0; 
+bool          key_c_held       = false;
+bool          key_d_held       = false;
+float         lastMlxDebugDx   = 0; 
+unsigned long lastMlxTimeMs    = 0;
 
 #define MLX_FAIL_LIMIT    5
 #define MLX_RECOVERY_MS   3000
 int           mlxFailCount  = 0;
 unsigned long mlxLastFailMs = 0;
 
-// =============================================================
-//  TMAG5273 CROSS SLIDER (Left Side)
-// =============================================================
-TMAG5273 tmag;
-bool  tmagReady = false;
-float tmagBaselineX = 0; 
-float tmagBaselineY = 0; 
-
-// Thresholds for X (Up/Down) and Y (Left/Right)
-const float TMAG_X_POS_THRES = 2.0f;  // UP
-const float TMAG_X_NEG_THRES = -2.0f; // DOWN
-const float TMAG_Y_POS_THRES = 2.0f;  // RIGHT
-const float TMAG_Y_NEG_THRES = -2.0f; // LEFT
-const float TMAG_DEADZONE    = 0.5f;  
-
-int           tmagStateX      = 0;
-int           tmagStateY      = 0;
-float         lastTmagDebugX  = 0;
-float         lastTmagDebugY  = 0;
-unsigned long lastTmagTimeX   = 0;
-unsigned long lastTmagTimeY   = 0;
-
-#define TMAG_INTERVAL_MS 20
-unsigned long lastTmagReadMs  = 0;
-
-
 // --- OTA / TELNET ---
-bool otaEnabled    = false;
-bool lastOtaState  = false;
+bool otaEnabled   = false;
+bool lastOtaState = false;
 bool telnetEnabled = false;
+
 
 // =============================================================
 //  TELNET HELPERS
@@ -145,7 +137,7 @@ void stopWiFiAP() {
 }
 
 // =============================================================
-//  MLX SLIDER RECOVERY
+//  MLX SOFT RECOVERY
 // =============================================================
 bool mlxSoftRecover() {
   mlx.setGain(MLX90393_GAIN_1X);
@@ -169,14 +161,155 @@ bool mlxSoftRecover() {
 }
 
 // =============================================================
+//  RELEASE ANY HELD KEYS (call before state reset)
+// =============================================================
+void releaseTmagKeys() {
+  if (key_a_held) { Keyboard.release('a'); key_a_held = false; debugPrintln("RELEASE 'a'"); }
+  if (key_b_held) { Keyboard.release('b'); key_b_held = false; debugPrintln("RELEASE 'b'"); }
+}
+
+void releaseMlxKeys() {
+  if (key_c_held) { Keyboard.release('c'); key_c_held = false; debugPrintln("RELEASE 'c'"); }
+  if (key_d_held) { Keyboard.release('d'); key_d_held = false; debugPrintln("RELEASE 'd'"); }
+}
+
+// =============================================================
+//  PROCESS TMAG SLIDER (Left Side: a = UP, b = DOWN)
+// =============================================================
+void processSliderTMAG() {
+  if (!tmagReady) return;
+  if (millis() - lastTmagReadMs < TMAG_INTERVAL_MS) return;
+  lastTmagReadMs = millis();
+  
+  float currentX = tmag.getXData();
+  float tdx = currentX - tmagBaselineX;
+
+  if (abs(tdx - lastTmagDebugDx) > 0.3f) {
+    // debugPrintf("[TMAG] dx: %.2f mT\n", tdx);
+    lastTmagDebugDx = tdx;
+  }
+
+  if (millis() - lastTmagTimeMs < SLIDER_COOLDOWN_MS) return;
+
+  // ── CENTER state ──
+  if (tmagSliderState == 0) {
+    if (tdx > TMAG_UP_THRESHOLD) {
+      tmagSliderState = 1;
+      lastTmagTimeMs = millis();
+      Keyboard.press('a');
+      key_a_held = true;
+      debugPrintln("TMAG UP -> keydown 'a'");
+    } else if (tdx < TMAG_DOWN_THRESHOLD) {
+      tmagSliderState = -1;
+      lastTmagTimeMs = millis();
+      Keyboard.press('b');
+      key_b_held = true;
+      debugPrintln("TMAG DOWN -> keydown 'b'");
+    }
+
+  // ── HELD UP ('a') ──
+  } else if (tmagSliderState == 1) {
+    if (tdx < TMAG_DEADZONE) {
+      tmagSliderState = 0; 
+      lastTmagTimeMs = millis();
+      Keyboard.release('a');
+      key_a_held = false;
+      debugPrintln("TMAG CENTER <- keyup 'a'");
+    }
+
+  // ── HELD DOWN ('b') ──
+  } else if (tmagSliderState == -1) {
+    if (tdx > -TMAG_DEADZONE) {
+      tmagSliderState = 0; 
+      lastTmagTimeMs = millis();
+      Keyboard.release('b');
+      key_b_held = false;
+      debugPrintln("TMAG CENTER <- keyup 'b'");
+    }
+  }
+}
+
+// =============================================================
+//  PROCESS MLX SLIDER (Right Side: c = UP, d = DOWN)
+// =============================================================
+void processSliderMLX() {
+  if (!mlxReady) return;
+
+  float x, y, z;
+  if (!mlx.readData(&x, &y, &z)) {
+    mlxFailCount++;
+    if (mlxFailCount >= MLX_FAIL_LIMIT) {
+      if (millis() - mlxLastFailMs >= MLX_RECOVERY_MS) {
+        mlxLastFailMs = millis();
+        debugPrintln("[MLX] Soft recovery attempt...");
+        releaseMlxKeys(); // Release inputs before resetting state
+        if (mlxSoftRecover()) {
+          mlxFailCount = 0;
+          mlxSliderState  = 0;
+          debugPrintln("[MLX] Soft recovery OK.");
+        }
+      }
+    }
+    return;
+  }
+  mlxFailCount = 0;
+
+  float dx = x - mlxBaselineX; 
+
+  if (abs(dx - lastMlxDebugDx) > 30.0f) {
+    // debugPrintf("[MLX] dx: %.1f\n", dx);
+    lastMlxDebugDx = dx;
+  }
+
+  if (millis() - lastMlxTimeMs < SLIDER_COOLDOWN_MS) return;
+
+  // ── CENTER state ──
+  if (mlxSliderState == 0) {
+    if (dx > MLX_UP_THRESHOLD) {
+      mlxSliderState = 1;
+      lastMlxTimeMs = millis();
+      Keyboard.press('c');
+      key_c_held = true;
+      debugPrintln("MLX UP -> keydown 'c'");
+    } else if (dx < MLX_DOWN_THRESHOLD) {
+      mlxSliderState = -1;
+      lastMlxTimeMs = millis();
+      Keyboard.press('d');
+      key_d_held = true;
+      debugPrintln("MLX DOWN -> keydown 'd'");
+    }
+
+  // ── HELD UP ('c') ──
+  } else if (mlxSliderState == 1) {
+    if (dx < MLX_DEADZONE) {
+      mlxSliderState = 0; 
+      lastMlxTimeMs = millis();
+      Keyboard.release('c');
+      key_c_held = false;
+      debugPrintln("MLX CENTER <- keyup 'c'");
+    }
+    
+  // ── HELD DOWN ('d') ──
+  } else if (mlxSliderState == -1) {
+    if (dx > -MLX_DEADZONE) {
+      mlxSliderState = 0; 
+      lastMlxTimeMs = millis();
+      Keyboard.release('d');
+      key_d_held = false;
+      debugPrintln("MLX CENTER <- keyup 'd'");
+    }
+  }
+}
+
+// =============================================================
 //  SETUP
 // =============================================================
 void setup() {
   delay(800);
   WiFi.mode(WIFI_OFF);
 
-  BLEDevice::init(ble_name); 
-  
+  // --- BLE Init ---
+  BLEDevice::init(ble_name);
   BLEServer  *pServer  = BLEDevice::createServer();
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
@@ -191,39 +324,37 @@ void setup() {
   pKbdChar->setCallbacks(new KeyboardCallbacks());
 
   pService->start();
-  
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);  
+  pAdvertising->setMinPreferred(0x06);
   pAdvertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
 
-  // I2C
+  // --- I2C Init ---
   Wire.begin(I2C_SDA, I2C_SCL);
   delay(100);
-
-  // MLX Init
-  if (mlx.begin_I2C(0x0C, &Wire)) {
-    mlxReady = true;
-    mlxSoftRecover(); 
-  }
 
   // --- Init TMAG (0x35) ---
   if (tmag.begin(0x35, Wire)) {
     tmagReady = true;
     tmag.setConvAvg(TMAG5273_X32_CONVERSION); 
     
-    float bx = 0, by = 0;
+    float bx = 0;
     for (int i = 0; i < BASELINE_SAMPLES; i++) {
       bx += tmag.getXData();
-      by += tmag.getYData(); // Capture Y baseline for L/R
       delay(10);
     }
     tmagBaselineX = bx / BASELINE_SAMPLES;
-    tmagBaselineY = by / BASELINE_SAMPLES;
   }
 
+  // --- Init MLX (0x0C) ---
+  if (mlx.begin_I2C(0x0C, &Wire)) {
+    mlxReady = true;
+    mlxSoftRecover();
+  }
+
+  // --- USB / Keyboard Init ---
   Keyboard.begin();
   USB.begin();
 }
@@ -233,7 +364,7 @@ void setup() {
 // =============================================================
 void loop() {
 
-  // 1. OTA / Telnet
+  // OTA / Telnet Handlingbb
   if (otaEnabled != lastOtaState) {
     if (otaEnabled) startWiFiAP(); else stopWiFiAP();
     lastOtaState = otaEnabled;
@@ -251,127 +382,7 @@ void loop() {
     }
   }
 
-  // ===========================================================
-  // 2. MLX CROSS LOGIC (Right Side)
-  // ===========================================================
-  if (mlxReady) {
-    float x, y, z;
-    if (!mlx.readData(&x, &y, &z)) {
-      mlxFailCount++;
-      if (mlxFailCount >= MLX_FAIL_LIMIT) {
-        if (millis() - mlxLastFailMs >= MLX_RECOVERY_MS) {
-          mlxLastFailMs = millis();
-          debugPrintln("[MLX] Soft recovery attempt...");
-          if (mlxSoftRecover()) {
-            mlxFailCount = 0;
-            mlxStateX = 0;
-            mlxStateY = 0;
-            debugPrintln("[MLX] Soft recovery OK.");
-          }
-        }
-      }
-    } else {
-      mlxFailCount = 0;
-      float dx = x - mlxBaselineX; 
-      float dy = y - mlxBaselineY; 
-
-      if (abs(dx - lastMlxDebugX) > 30.0f) {
-          // debugPrintf("[CALIB] MLX DX: %.1f\n", dx);
-          lastMlxDebugX = dx;
-      }
-      if (abs(dy - lastMlxDebugY) > 30.0f) {
-          // debugPrintf("[CALIB] MLX DY: %.1f\n", dy);
-          lastMlxDebugY = dy;
-      }
-
-      // --- MLX X-Axis (Up/Down) ---
-      if (millis() - lastMlxTimeX >= SLIDER_COOLDOWN_MS) {
-        if (mlxStateX == 0) {
-          if (dx > MLX_X_POS_THRES) {
-            mlxStateX = 1; lastMlxTimeX = millis();
-            Keyboard.write('c'); debugPrintln("MLX UP -> 'c'");
-          } else if (dx < MLX_X_NEG_THRES) {
-            mlxStateX = -1; lastMlxTimeX = millis();
-            Keyboard.write('d'); debugPrintln("MLX DOWN -> 'd'");
-          }
-        } else if (mlxStateX == 1 && dx < MLX_DEADZONE) {
-          mlxStateX = 0; lastMlxTimeX = millis(); debugPrintln("MLX Reset X-Axis");
-        } else if (mlxStateX == -1 && dx > -MLX_DEADZONE) {
-          mlxStateX = 0; lastMlxTimeX = millis(); debugPrintln("MLX Reset X-Axis");
-        }
-      }
-
-      // --- MLX Y-Axis (Left/Right) ---
-      if (millis() - lastMlxTimeY >= SLIDER_COOLDOWN_MS) {
-        if (mlxStateY == 0) {
-          if (dy > MLX_Y_POS_THRES) {
-            mlxStateY = 1; lastMlxTimeY = millis();
-            Keyboard.write('f'); debugPrintln("MLX RIGHT -> 'f'");
-          } else if (dy < MLX_Y_NEG_THRES) {
-            mlxStateY = -1; lastMlxTimeY = millis();
-            Keyboard.write('e'); debugPrintln("MLX LEFT -> 'e'");
-          }
-        } else if (mlxStateY == 1 && dy < MLX_DEADZONE) {
-          mlxStateY = 0; lastMlxTimeY = millis(); debugPrintln("MLX Reset Y-Axis");
-        } else if (mlxStateY == -1 && dy > -MLX_DEADZONE) {
-          mlxStateY = 0; lastMlxTimeY = millis(); debugPrintln("MLX Reset Y-Axis");
-        }
-      }
-    }
-  }
-
-  // ===========================================================
-  // 3. TMAG CROSS LOGIC (Left Side)
-  // ===========================================================
-  if (tmagReady && (millis() - lastTmagReadMs >= TMAG_INTERVAL_MS)) {
-    lastTmagReadMs = millis();
-    
-    float currentX = tmag.getXData();
-    float currentY = tmag.getYData();
-    float tdx = currentX - tmagBaselineX;
-    float tdy = currentY - tmagBaselineY;
-
-    if (abs(tdx - lastTmagDebugX) > 0.5f) {
-      // debugPrintf("[TMAG] DX: %.2f\n", tdx);
-      lastTmagDebugX = tdx;
-    }
-    if (abs(tdy - lastTmagDebugY) > 0.5f) {
-      // debugPrintf("[TMAG] DY: %.2f\n", tdy);
-      lastTmagDebugY = tdy;
-    }
-
-    // --- TMAG X-Axis (Up/Down) ---
-    if (millis() - lastTmagTimeX >= SLIDER_COOLDOWN_MS) {
-      if (tmagStateX == 0) {
-        if (tdx > TMAG_X_POS_THRES) {
-          tmagStateX = 1; lastTmagTimeX = millis();
-          Keyboard.write('a'); debugPrintln("TMAG UP -> 'a'");
-        } else if (tdx < TMAG_X_NEG_THRES) {
-          tmagStateX = -1; lastTmagTimeX = millis();
-          Keyboard.write('b'); debugPrintln("TMAG DOWN -> 'b'");
-        }
-      } else if (tmagStateX == 1 && tdx < TMAG_DEADZONE) {
-        tmagStateX = 0; lastTmagTimeX = millis(); debugPrintln("TMAG Reset X-Axis");
-      } else if (tmagStateX == -1 && tdx > -TMAG_DEADZONE) {
-        tmagStateX = 0; lastTmagTimeX = millis(); debugPrintln("TMAG Reset X-Axis");
-      }
-    }
-
-    // --- TMAG Y-Axis (Left/Right) ---
-    if (millis() - lastTmagTimeY >= SLIDER_COOLDOWN_MS) {
-      if (tmagStateY == 0) {
-        if (tdy > TMAG_Y_POS_THRES) {
-          tmagStateY = 1; lastTmagTimeY = millis();
-          Keyboard.write('r'); debugPrintln("TMAG RIGHT -> 'r'");
-        } else if (tdy < TMAG_Y_NEG_THRES) {
-          tmagStateY = -1; lastTmagTimeY = millis();
-          Keyboard.write('l'); debugPrintln("TMAG LEFT -> 'l'");
-        }
-      } else if (tmagStateY == 1 && tdy < TMAG_DEADZONE) {
-        tmagStateY = 0; lastTmagTimeY = millis(); debugPrintln("TMAG Reset Y-Axis");
-      } else if (tmagStateY == -1 && tdy > -TMAG_DEADZONE) {
-        tmagStateY = 0; lastTmagTimeY = millis(); debugPrintln("TMAG Reset Y-Axis");
-      }
-    }
-  }
+  // Process Sensors
+  processSliderTMAG();
+  processSliderMLX();
 }
