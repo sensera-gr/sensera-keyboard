@@ -389,24 +389,20 @@
 
 <div class="header">
   <h1>ESP32 USB-HID · key event monitor</h1>
-  <div class="sub">left knob: a=↓ · b=↑ &nbsp;·&nbsp; right knob: c=↓ · d=↑</div>
+  <div class="sub">left knob: a=↓ · b=↑ &nbsp;·&nbsp; right knob: c=↑ · d=↓</div>
 </div>
 
-<!-- CONTROLLER -->
 <div class="controller-shell">
   <div class="bezel">
     <div class="faceplate">
 
-      <!-- LEFT KNOB: down=a, up=b -->
       <div class="knob-assembly" id="knobL">
         <div class="knob-mount">
-          <!-- up zone → key b -->
           <div class="zone-arrow" id="zoneL-up">
             <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
             <span class="zone-key">b</span>
           </div>
           <div class="knob-cap" id="capL"></div>
-          <!-- down zone → key a -->
           <div class="zone-arrow" id="zoneL-down">
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             <span class="zone-key">a</span>
@@ -419,7 +415,6 @@
         </div>
       </div>
 
-      <!-- CENTER -->
       <div class="center-col">
         <div class="led-strip">
           <div class="led-pip" id="ledBle"></div>
@@ -453,19 +448,16 @@
         <div class="bolt"></div>
       </div>
 
-      <!-- RIGHT KNOB: down=c, up=d -->
       <div class="knob-assembly" id="knobR">
         <div class="knob-mount">
-          <!-- up zone → key d -->
           <div class="zone-arrow" id="zoneR-up">
             <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
-            <span class="zone-key">d</span>
+            <span class="zone-key">c</span>
           </div>
           <div class="knob-cap" id="capR"></div>
-          <!-- down zone → key c -->
           <div class="zone-arrow" id="zoneR-down">
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            <span class="zone-key">c</span>
+            <span class="zone-key">d</span>
           </div>
         </div>
         <div class="knob-badges">
@@ -479,7 +471,6 @@
   </div>
 </div>
 
-<!-- STATS -->
 <div class="stats-row">
   <div class="stat-card">
     <div class="stat-label">total events</div>
@@ -499,7 +490,6 @@
   </div>
 </div>
 
-<!-- KEY CHIPS -->
 <div class="chips-row">
   <div class="chip" id="chip-a">
     <div class="chip-keycap">a</div>
@@ -513,17 +503,16 @@
   </div>
   <div class="chip" id="chip-c">
     <div class="chip-keycap">c</div>
-    <div class="chip-name">right knob · ↓</div>
+    <div class="chip-name">right knob · ↑</div>
     <div class="chip-event" id="evt-c">waiting</div>
   </div>
   <div class="chip" id="chip-d">
     <div class="chip-keycap">d</div>
-    <div class="chip-name">right knob · ↑</div>
+    <div class="chip-name">right knob · ↓</div>
     <div class="chip-event" id="evt-d">waiting</div>
   </div>
 </div>
 
-<!-- EVENT LOG -->
 <div class="log-section">
   <div class="log-header">
     <div class="section-title">event log</div>
@@ -534,7 +523,6 @@
   </div>
 </div>
 
-<!-- TIMING COMPARISON -->
 <div class="timing-section">
   <div class="section-title" style="margin-bottom:10px">keydown / keyup timing</div>
   <div class="timing-card">
@@ -604,12 +592,12 @@ function flashLed(k) {
 
 /* knob caps + zone highlights
    Left knob:  a=down zone, b=up zone
-   Right knob: c=down zone, d=up zone */
+   Right knob: c=up zone, d=down zone (Swapped per request) */
 const KNOB_MAP = {
   a: { cap:'capL', zone:'zoneL-down', badge:'badgeA', litClass:'active-a', zoneLit:'zone-lit-a', badgeLit:'lit-a' },
   b: { cap:'capL', zone:'zoneL-up',   badge:'badgeB', litClass:'active-b', zoneLit:'zone-lit-b', badgeLit:'lit-b' },
-  c: { cap:'capR', zone:'zoneR-down', badge:'badgeC', litClass:'active-c', zoneLit:'zone-lit-c', badgeLit:'lit-c' },
-  d: { cap:'capR', zone:'zoneR-up',   badge:'badgeD', litClass:'active-d', zoneLit:'zone-lit-d', badgeLit:'lit-d' },
+  c: { cap:'capR', zone:'zoneR-up',   badge:'badgeC', litClass:'active-c', zoneLit:'zone-lit-c', badgeLit:'lit-c' },
+  d: { cap:'capR', zone:'zoneR-down', badge:'badgeD', litClass:'active-d', zoneLit:'zone-lit-d', badgeLit:'lit-d' },
 };
 
 function setKnob(k, active) {
@@ -654,7 +642,7 @@ function setChip(k, state) {
 }
 
 /* log */
-const srcMap = { a:'left ↓', b:'left ↑', c:'right ↓', d:'right ↑' };
+const srcMap = { a:'left ↓', b:'left ↑', c:'right ↑', d:'right ↓' };
 function addLog(k, type) {
   const box = document.getElementById('logBox');
   const empty = box.querySelector('.log-empty');
