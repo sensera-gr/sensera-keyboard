@@ -6,9 +6,7 @@
 <title>ESP32 Controller — Key Event Monitor</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
     --bg:       #0e0e10;
     --surface:  #18181b;
@@ -19,16 +17,13 @@
     --text:     #e8e8f0;
     --muted:    #6b6b80;
     --dim:      #3a3a48;
-
     --a-color: #e05c3a;  --a-glow: rgba(224,92,58,0.28);  --a-dim: rgba(224,92,58,0.09);
     --b-color: #3a9fe0;  --b-glow: rgba(58,159,224,0.28); --b-dim: rgba(58,159,224,0.09);
     --c-color: #3ae09a;  --c-glow: rgba(58,224,154,0.22); --c-dim: rgba(58,224,154,0.09);
     --d-color: #c97ef0;  --d-glow: rgba(201,126,240,0.22);--d-dim: rgba(201,126,240,0.09);
-
     --mono: 'JetBrains Mono', monospace;
     --sans: 'Inter', sans-serif;
   }
-
   html, body {
     background: var(--bg);
     color: var(--text);
@@ -44,7 +39,6 @@
     gap: 24px;
     min-height: 100vh;
   }
-
   /* ── header ── */
   .header { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .header h1 {
@@ -54,10 +48,8 @@
   .header .sub {
     font-size: 10px; color: var(--dim); font-family: var(--mono); letter-spacing: 0.06em;
   }
-
   /* ── controller shell ── */
   .controller-shell { width: 600px; max-width: 100%; }
-
   .bezel {
     background: #1a1a20;
     border: 2px solid #2d2d3a;
@@ -80,7 +72,6 @@
       radial-gradient(circle 3px at 50% calc(100% - 12px), #1a1a22 100%, transparent 100%);
     pointer-events: none; z-index: 1;
   }
-
   .faceplate {
     background: #111116;
     border-radius: 18px;
@@ -92,13 +83,11 @@
     gap: 12px;
     position: relative;
   }
-
   /* ── knob assembly ── */
   .knob-assembly {
     display: flex; flex-direction: column; align-items: center;
     gap: 6px; flex-shrink: 0;
   }
-
   /* mounting plate */
   .knob-mount {
     width: 76px; height: 138px;
@@ -110,7 +99,6 @@
     padding: 10px 0;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.55);
   }
-
   /* up/down zone buttons */
   .zone-arrow {
     width: 50px; height: 38px;
@@ -136,24 +124,19 @@
     transition: color 0.1s;
     line-height: 1;
   }
-
   /* lit states — one per key color */
   .zone-lit-a { background: var(--a-dim) !important; border-color: var(--a-color) !important; }
   .zone-lit-a svg { stroke: var(--a-color) !important; }
   .zone-lit-a .zone-key { color: var(--a-color) !important; }
-
   .zone-lit-b { background: var(--b-dim) !important; border-color: var(--b-color) !important; }
   .zone-lit-b svg { stroke: var(--b-color) !important; }
   .zone-lit-b .zone-key { color: var(--b-color) !important; }
-
   .zone-lit-c { background: var(--c-dim) !important; border-color: var(--c-color) !important; }
   .zone-lit-c svg { stroke: var(--c-color) !important; }
   .zone-lit-c .zone-key { color: var(--c-color) !important; }
-
   .zone-lit-d { background: var(--d-dim) !important; border-color: var(--d-color) !important; }
   .zone-lit-d svg { stroke: var(--d-color) !important; }
   .zone-lit-d .zone-key { color: var(--d-color) !important; }
-
   /* knob cap */
   .knob-cap {
     width: 54px; height: 54px; border-radius: 50%;
@@ -175,12 +158,10 @@
     top:50%;left:50%;transform:translate(-50%,-50%);
     border:1px solid rgba(255,255,255,0.055);
   }
-
   .knob-cap.active-a { border-color:var(--a-color); box-shadow:0 3px 10px rgba(0,0,0,.65),0 0 18px var(--a-glow),inset 0 1px 2px rgba(255,255,255,.04); }
   .knob-cap.active-b { border-color:var(--b-color); box-shadow:0 3px 10px rgba(0,0,0,.65),0 0 18px var(--b-glow),inset 0 1px 2px rgba(255,255,255,.04); }
   .knob-cap.active-c { border-color:var(--c-color); box-shadow:0 3px 10px rgba(0,0,0,.65),0 0 18px var(--c-glow),inset 0 1px 2px rgba(255,255,255,.04); }
   .knob-cap.active-d { border-color:var(--d-color); box-shadow:0 3px 10px rgba(0,0,0,.65),0 0 18px var(--d-glow),inset 0 1px 2px rgba(255,255,255,.04); }
-
   /* labels under knob */
   .knob-badges {
     display: flex; gap: 5px; align-items: center;
@@ -197,13 +178,11 @@
   .knob-badge.lit-b { color: var(--b-color); border-color: rgba(58,159,224,0.3); }
   .knob-badge.lit-c { color: var(--c-color); border-color: rgba(58,224,154,0.3); }
   .knob-badge.lit-d { color: var(--d-color); border-color: rgba(201,126,240,0.3); }
-
   /* ── center column ── */
   .center-col {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; gap: 12px;
   }
-
   /* LED pips */
   .led-strip { display: flex; align-items: center; gap: 5px; }
   .led-pip {
@@ -216,7 +195,6 @@
   .led-pip.on-c { background:var(--c-color); box-shadow:0 0 6px var(--c-glow); }
   .led-pip.on-d { background:var(--d-color); box-shadow:0 0 6px var(--d-glow); }
   .led-pip.ble  { background:#3a6ef0; box-shadow:0 0 8px rgba(58,110,240,0.4); }
-
   /* display panel */
   .touchpad {
     width: 200px; height: 108px;
@@ -243,12 +221,10 @@
   .tp-bar { flex:1; height:3px; background:#1a1a22; border-radius:2px; overflow:hidden; }
   .tp-fill{ height:100%; width:0%; border-radius:2px; transition:width 0.07s; }
   .tp-st  { font-size:9px; color:var(--dim); min-width:28px; text-align:right; }
-
   .tp-row.key-a .tp-k{color:var(--a-color)} .tp-row.key-a .tp-fill{background:var(--a-color)} .tp-row.key-a.active .tp-st{color:var(--a-color)}
   .tp-row.key-b .tp-k{color:var(--b-color)} .tp-row.key-b .tp-fill{background:var(--b-color)} .tp-row.key-b.active .tp-st{color:var(--b-color)}
   .tp-row.key-c .tp-k{color:var(--c-color)} .tp-row.key-c .tp-fill{background:var(--c-color)} .tp-row.key-c.active .tp-st{color:var(--c-color)}
   .tp-row.key-d .tp-k{color:var(--d-color)} .tp-row.key-d .tp-fill{background:var(--d-color)} .tp-row.key-d.active .tp-st{color:var(--d-color)}
-
   /* bolt */
   .bolt {
     width:18px; height:18px; border-radius:50%;
@@ -256,7 +232,6 @@
     border: 1.5px solid #555;
     box-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
-
   /* ── stats ── */
   .stats-row {
     width:600px; max-width:100%;
@@ -269,7 +244,6 @@
   }
   .stat-label { font-size:10px; color:var(--muted); font-family:var(--mono); letter-spacing:.06em; }
   .stat-value { font-size:22px; font-weight:600; font-family:var(--mono); color:var(--text); line-height:1.2; }
-
   /* ── key chips ── */
   .chips-row {
     width:600px; max-width:100%;
@@ -293,28 +267,22 @@
   }
   .chip-name  { font-size:10px; color:var(--muted); font-family:var(--mono); text-align:center; line-height:1.4; }
   .chip-event { font-size:10px; color:var(--dim);   font-family:var(--mono); }
-
   .chip.held-a { background:rgba(224,92,58,0.06); border-color:var(--a-color); }
   .chip.held-a .chip-keycap { background:var(--a-dim); color:var(--a-color); border-color:var(--a-color); box-shadow:0 0 10px var(--a-glow); }
   .chip.held-a .chip-event  { color:var(--a-color); }
-
   .chip.held-b { background:rgba(58,159,224,0.06); border-color:var(--b-color); }
   .chip.held-b .chip-keycap { background:var(--b-dim); color:var(--b-color); border-color:var(--b-color); box-shadow:0 0 10px var(--b-glow); }
   .chip.held-b .chip-event  { color:var(--b-color); }
-
   .chip.held-c { background:rgba(58,224,154,0.06); border-color:var(--c-color); }
   .chip.held-c .chip-keycap { background:var(--c-dim); color:var(--c-color); border-color:var(--c-color); box-shadow:0 0 10px var(--c-glow); }
   .chip.held-c .chip-event  { color:var(--c-color); }
-
   .chip.held-d { background:rgba(201,126,240,0.06); border-color:var(--d-color); }
   .chip.held-d .chip-keycap { background:var(--d-dim); color:var(--d-color); border-color:var(--d-color); box-shadow:0 0 10px var(--d-glow); }
   .chip.held-d .chip-event  { color:var(--d-color); }
-
   .chip.flash-a .chip-keycap { color:var(--a-color); }
   .chip.flash-b .chip-keycap { color:var(--b-color); }
   .chip.flash-c .chip-keycap { color:var(--c-color); }
   .chip.flash-d .chip-keycap { color:var(--d-color); }
-
   /* ── event log ── */
   .log-section { width:600px; max-width:100%; }
   .log-header  { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -326,7 +294,6 @@
     transition:color .1s, border-color .1s;
   }
   .log-clear:hover { color:var(--text); border-color:var(--border2); }
-
   .log-box {
     background:var(--surface); border:1px solid var(--border);
     border-radius:12px; padding:12px;
@@ -347,7 +314,6 @@
   .log-kk.kb { color:var(--b-color); }
   .log-kk.kc { color:var(--c-color); }
   .log-kk.kd { color:var(--d-color); }
-
   /* ── timing ── */
   .timing-section { width:600px; max-width:100%; }
   .timing-card {
@@ -378,7 +344,6 @@
   .t-press  .t-up { left:calc(8px + 62%); width:4%; }
   .timing-legend { display:flex; gap:14px; font-family:var(--mono); font-size:10px; color:var(--muted); }
   .tl-dot { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; vertical-align:middle; }
-
   @media (max-width:640px) {
     .controller-shell,.stats-row,.chips-row,.log-section,.timing-section { width:100%; }
     .stats-row,.chips-row { grid-template-columns:repeat(2,1fr); }
@@ -386,23 +351,24 @@
 </style>
 </head>
 <body>
-
 <div class="header">
   <h1>ESP32 USB-HID · key event monitor</h1>
-  <div class="sub">left knob: a=↓ · b=↑ &nbsp;·&nbsp; right knob: c=↑ · d=↓</div>
+  <div class="sub">left knob: a=↓ · b=↑ &nbsp;·&nbsp; right knob: c=↓ · d=↑</div>
 </div>
-
+<!-- CONTROLLER -->
 <div class="controller-shell">
   <div class="bezel">
     <div class="faceplate">
-
+      <!-- LEFT KNOB: down=a, up=b -->
       <div class="knob-assembly" id="knobL">
         <div class="knob-mount">
+          <!-- up zone → key b -->
           <div class="zone-arrow" id="zoneL-up">
             <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
             <span class="zone-key">b</span>
           </div>
           <div class="knob-cap" id="capL"></div>
+          <!-- down zone → key a -->
           <div class="zone-arrow" id="zoneL-down">
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             <span class="zone-key">a</span>
@@ -414,7 +380,7 @@
           <span class="knob-badge" id="badgeB">'b'</span>
         </div>
       </div>
-
+      <!-- CENTER -->
       <div class="center-col">
         <div class="led-strip">
           <div class="led-pip" id="ledBle"></div>
@@ -447,17 +413,19 @@
         </div>
         <div class="bolt"></div>
       </div>
-
+      <!-- RIGHT KNOB: down=c, up=d -->
       <div class="knob-assembly" id="knobR">
         <div class="knob-mount">
+          <!-- up zone → key d -->
           <div class="zone-arrow" id="zoneR-up">
             <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
-            <span class="zone-key">c</span>
+            <span class="zone-key">d</span>
           </div>
           <div class="knob-cap" id="capR"></div>
+          <!-- down zone → key c -->
           <div class="zone-arrow" id="zoneR-down">
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            <span class="zone-key">d</span>
+            <span class="zone-key">c</span>
           </div>
         </div>
         <div class="knob-badges">
@@ -466,11 +434,10 @@
           <span class="knob-badge" id="badgeD">'d'</span>
         </div>
       </div>
-
     </div>
   </div>
 </div>
-
+<!-- STATS -->
 <div class="stats-row">
   <div class="stat-card">
     <div class="stat-label">total events</div>
@@ -489,7 +456,7 @@
     <div class="stat-value" id="statLast" style="color:var(--muted)">—</div>
   </div>
 </div>
-
+<!-- KEY CHIPS -->
 <div class="chips-row">
   <div class="chip" id="chip-a">
     <div class="chip-keycap">a</div>
@@ -503,16 +470,16 @@
   </div>
   <div class="chip" id="chip-c">
     <div class="chip-keycap">c</div>
-    <div class="chip-name">right knob · ↑</div>
+    <div class="chip-name">right knob · ↓</div>
     <div class="chip-event" id="evt-c">waiting</div>
   </div>
   <div class="chip" id="chip-d">
     <div class="chip-keycap">d</div>
-    <div class="chip-name">right knob · ↓</div>
+    <div class="chip-name">right knob · ↑</div>
     <div class="chip-event" id="evt-d">waiting</div>
   </div>
 </div>
-
+<!-- EVENT LOG -->
 <div class="log-section">
   <div class="log-header">
     <div class="section-title">event log</div>
@@ -522,7 +489,7 @@
     <div class="log-empty">Waiting for keys a · b · c · d …</div>
   </div>
 </div>
-
+<!-- TIMING COMPARISON -->
 <div class="timing-section">
   <div class="section-title" style="margin-bottom:10px">keydown / keyup timing</div>
   <div class="timing-card">
@@ -553,20 +520,17 @@
     </div>
   </div>
 </div>
-
 <script>
 const KEYS = ['a','b','c','d'];
 let stats = { total:0, down:0, up:0 };
 let chipTimers = {};
 let logCount = 0;
 const MAX_LOG = 200;
-
 /* timestamp */
 function ts() {
   const n = new Date();
   return n.toTimeString().slice(0,8) + '.' + String(n.getMilliseconds()).padStart(3,'0');
 }
-
 /* touchpad bars */
 function setTp(k, active) {
   const row  = document.getElementById('tp'  + k.toUpperCase());
@@ -577,7 +541,6 @@ function setTp(k, active) {
   fill.style.width  = active ? '100%' : '0%';
   st.textContent    = active ? 'held' : 'idle';
 }
-
 /* LED pips */
 function setLed(k, on) {
   const el = document.getElementById('led' + k.toUpperCase());
@@ -589,37 +552,31 @@ function flashLed(k) {
   setLed(k, true);
   setTimeout(() => setLed(k, false), 300);
 }
-
 /* knob caps + zone highlights
    Left knob:  a=down zone, b=up zone
-   Right knob: c=up zone, d=down zone (Swapped per request) */
+   Right knob: c=down zone, d=up zone */
 const KNOB_MAP = {
   a: { cap:'capL', zone:'zoneL-down', badge:'badgeA', litClass:'active-a', zoneLit:'zone-lit-a', badgeLit:'lit-a' },
   b: { cap:'capL', zone:'zoneL-up',   badge:'badgeB', litClass:'active-b', zoneLit:'zone-lit-b', badgeLit:'lit-b' },
-  c: { cap:'capR', zone:'zoneR-up',   badge:'badgeC', litClass:'active-c', zoneLit:'zone-lit-c', badgeLit:'lit-c' },
-  d: { cap:'capR', zone:'zoneR-down', badge:'badgeD', litClass:'active-d', zoneLit:'zone-lit-d', badgeLit:'lit-d' },
+  c: { cap:'capR', zone:'zoneR-down', badge:'badgeC', litClass:'active-c', zoneLit:'zone-lit-c', badgeLit:'lit-c' },
+  d: { cap:'capR', zone:'zoneR-up',   badge:'badgeD', litClass:'active-d', zoneLit:'zone-lit-d', badgeLit:'lit-d' },
 };
-
 function setKnob(k, active) {
   const m = KNOB_MAP[k];
   const cap   = document.getElementById(m.cap);
   const zone  = document.getElementById(m.zone);
   const badge = document.getElementById(m.badge);
   if (!cap || !zone || !badge) return;
-
   /* cap: remove all active-* then add the right one */
   cap.classList.remove('active-a','active-b','active-c','active-d');
   if (active) cap.classList.add(m.litClass);
-
   /* zone */
   zone.classList.remove('zone-lit-a','zone-lit-b','zone-lit-c','zone-lit-d');
   if (active) zone.classList.add(m.zoneLit);
-
   /* badge */
   badge.classList.remove('lit-a','lit-b','lit-c','lit-d');
   if (active) badge.classList.add(m.badgeLit);
 }
-
 function flashZone(k) {
   const m = KNOB_MAP[k];
   const zone = document.getElementById(m.zone);
@@ -627,7 +584,6 @@ function flashZone(k) {
   zone.classList.add(m.zoneLit);
   setTimeout(() => zone.classList.remove(m.zoneLit), 260);
 }
-
 /* key chips */
 function setChip(k, state) {
   const el  = document.getElementById('chip-' + k);
@@ -640,9 +596,8 @@ function setChip(k, state) {
   if (chipTimers[k]) clearTimeout(chipTimers[k]);
   if (state === 'flash') chipTimers[k] = setTimeout(() => setChip(k, ''), 480);
 }
-
 /* log */
-const srcMap = { a:'left ↓', b:'left ↑', c:'right ↑', d:'right ↓' };
+const srcMap = { a:'left ↓', b:'left ↑', c:'right ↓', d:'right ↑' };
 function addLog(k, type) {
   const box = document.getElementById('logBox');
   const empty = box.querySelector('.log-empty');
@@ -662,7 +617,6 @@ function addLog(k, type) {
     if (rows.length > MAX_LOG) rows[0].remove();
   }
 }
-
 /* stats */
 function updateStats(type, k) {
   stats.total++;
@@ -672,7 +626,6 @@ function updateStats(type, k) {
   document.getElementById('statUp').textContent    = stats.up;
   document.getElementById('statLast').textContent  = "'" + k + "'";
 }
-
 /* keydown */
 document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -684,7 +637,6 @@ document.addEventListener('keydown', e => {
   setLed(k, true);
   setKnob(k, true);
 });
-
 /* keyup */
 document.addEventListener('keyup', e => {
   const k = e.key.toLowerCase();
@@ -697,7 +649,6 @@ document.addEventListener('keyup', e => {
   setKnob(k, false);
   flashZone(k);
 });
-
 /* clear */
 document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('logBox').innerHTML = '<div class="log-empty">Waiting for keys a · b · c · d …</div>';
@@ -707,7 +658,6 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   ['statTotal','statDown','statUp'].forEach(id => document.getElementById(id).textContent='0');
   document.getElementById('statLast').textContent = '—';
 });
-
 /* BLE heartbeat */
 let bleTick = false;
 setInterval(() => {
